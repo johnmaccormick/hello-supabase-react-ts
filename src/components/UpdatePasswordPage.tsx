@@ -1,36 +1,48 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import supabaseClient from "../utils/supabase";
 
-interface ForgotPasswordPageProps {
-  resetPassword: (email: string) => Promise<{ error: string | null }>;
+interface UpdatePasswordPageProps {
+  updatePassword: (email: string) => Promise<{ error: string | null }>;
 }
 
-function ForgotPasswordPage({ resetPassword }: ForgotPasswordPageProps) {
-  const [email, setEmail] = useState("");
+function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
+  const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+//   const navigate = useNavigate();
+
+  // Handle the auth callback when user arrives from email.
+  // Not necessary, but good to have this console message for debugging.
+  useEffect(() => {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        // User is now in password recovery mode
+        console.log("Ready to update password");
+      }
+    });
+  }, []);
 
   // Reset error & success state when email changes
   useEffect(() => {
     setError(null);
     setSuccess(null);
-  }, [email]);
+  }, [newPassword]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!newPassword) return;
 
     setLoading(true);
-    setError(null); // Clear previous errors
-    setSuccess(null); // Clear previous success messages
     try {
-      const result = await resetPassword(email);
+      const result = await updatePassword(newPassword);
       if (result?.error) {
-          setError(result.error);
-          console.error("Error resetting password:", result.error);
-        } else {
-          setSuccess("Check your email for reset link.");
-        }
+        setError(result.error);
+        console.error("Error updating password:", result.error);
+      } else {
+        setSuccess("Password updated.");
+      }
     } finally {
       setLoading(false);
     }
@@ -59,26 +71,26 @@ function ForgotPasswordPage({ resetPassword }: ForgotPasswordPageProps) {
           }}
         >
           <h2 style={{ textAlign: "center", marginBottom: "2rem" }}>
-            Reset password
+            Update password
           </h2>
-          <p>Enter email to request password reset.</p>
+          <p>Enter new password.</p>
           <form
             onSubmit={handleSubmit}
             style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
           >
             <div>
               <label
-                htmlFor="email"
+                htmlFor="newPassword"
                 style={{ display: "block", marginBottom: "0.5rem" }}
               >
-                Email:
+                New password:
               </label>
               <input
-                id="email"
-                type="email"
-                placeholder="Your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="newPassword"
+                type="password"
+                placeholder="New password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
                 required
                 style={{
                   width: "100%",
@@ -92,7 +104,7 @@ function ForgotPasswordPage({ resetPassword }: ForgotPasswordPageProps) {
 
             <button
               type="submit"
-              disabled={loading || !email}
+              disabled={loading || !(newPassword.length >= 6)}
               style={{
                 padding: "0.75rem",
                 backgroundColor: loading ? "#ccc" : "#007bff",
@@ -104,42 +116,42 @@ function ForgotPasswordPage({ resetPassword }: ForgotPasswordPageProps) {
                 marginTop: "1rem",
               }}
             >
-              {loading ? "Loading..." : "Request reset"}
+              {loading ? "Loading..." : "Update password"}
             </button>
           </form>
           {error && (
-          <div
-            style={{
-              padding: "0.75rem",
-              backgroundColor: "#f8d7da",
-              color: "#721c24",
-              border: "1px solid #f5c6cb",
-              borderRadius: "4px",
-              marginBottom: "1rem",
-            }}
-          >
-            {error}
-          </div>
-        )}
+            <div
+              style={{
+                padding: "0.75rem",
+                backgroundColor: "#f8d7da",
+                color: "#721c24",
+                border: "1px solid #f5c6cb",
+                borderRadius: "4px",
+                marginBottom: "1rem",
+              }}
+            >
+              {error}
+            </div>
+          )}
 
-        {success && (
-          <div
-            style={{
-              padding: "0.75rem",
-              backgroundColor: "#f8d7da",
-              color: "#139d2eff",
-              border: "1px solid #f5c6cb",
-              borderRadius: "4px",
-              marginBottom: "1rem",
-            }}
-          >
-            {success}
-          </div>
-        )}
+          {success && (
+            <div
+              style={{
+                padding: "0.75rem",
+                backgroundColor: "#f8d7da",
+                color: "#139d2eff",
+                border: "1px solid #f5c6cb",
+                borderRadius: "4px",
+                marginBottom: "1rem",
+              }}
+            >
+              {success}
+            </div>
+          )}
         </div>
       </div>
     </>
   );
 }
 
-export default ForgotPasswordPage;
+export default UpdatePasswordPage;

@@ -6,6 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import Header from "./components/Header";
 import LoginPage from "./components/LoginPage";
 import ForgotPasswordPage from "./components/ForgotPasswordPage";
+import UpdatePasswordPage from "./components/UpdatePasswordPage";
 
 // Your main todos page component
 function TodosPage({ user }: { user: User | null }) {
@@ -81,9 +82,7 @@ function App() {
       console.error("Error signing in:", error.message);
       return { error: error.message };
     } else {
-      console.log(
-        "Sign in successful."
-      );
+      console.log("Sign in successful.");
       return { error: null };
     }
   };
@@ -97,12 +96,10 @@ function App() {
     if (error) {
       console.error("Error signing up:", error.message);
       return { error: error.message };
-      // toast.error(error.message);
     } else {
       console.log(
         "Sign up successful! Please check your email for verification."
       );
-      // toast.success("Check your email for verification.");
       return { error: null };
     }
   };
@@ -112,6 +109,40 @@ function App() {
     const { error } = await supabaseClient.auth.signOut();
     if (error) {
       console.error("Error signing out:", error.message);
+      return { error: error.message };
+    } else {
+      console.log("Sign out successful.");
+      setUser(null);
+      return { error: null };
+    }
+  };
+
+  // Reset password
+  const resetPassword = async (email: string) => {
+    const redirectTo = window.location.origin + "/update-password";
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: redirectTo,
+          });
+    if (error) {
+      console.error("Error resetting password:", error.message);
+      return { error: error.message };
+    } else {
+      console.log("Password reset email sent.\nRedirecting to ", redirectTo);
+      return { error: null };
+    }
+  };
+
+  // Update password
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabaseClient.auth.updateUser({
+      password: newPassword,
+    });
+    if (error) {
+      console.error("Error updating password:", error.message);
+      return { error: error.message };
+    } else {
+      console.log("Password updated successfully.");
+      return { error: null };
     }
   };
 
@@ -119,28 +150,18 @@ function App() {
     return <div style={{ padding: "2rem" }}>Loading...</div>;
   }
 
-  // Reset password
-  const resetPassword = async (email: string) => {
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
-    if (error) {
-      console.error("Error sending reset email:", error.message);
-    } else {
-      console.log("Password reset email sent!");
-      // You might want to show a success message to the user
-    }
-  };
-
   return (
-    <Router>
+    // <Router basename="/hello-supabase-react-ts">
+    <Router >
       <div>
         <Header user={user} signOut={signOut} />
         <main>
           <Routes>
             <Route path="/" element={<TodosPage user={user} />} />
-            <Route
+            {/* <Route
               path="/hello-supabase-react-ts"
               element={<TodosPage user={user} />}
-            />
+            /> */}
             <Route
               path="/login"
               element={
@@ -150,6 +171,10 @@ function App() {
             <Route
               path="/forgot-password"
               element={<ForgotPasswordPage resetPassword={resetPassword} />}
+            />            
+            <Route
+              path="/update-password"
+              element={<UpdatePasswordPage updatePassword={updatePassword} />}
             />
           </Routes>
         </main>

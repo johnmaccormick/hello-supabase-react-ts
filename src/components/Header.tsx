@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js';
 
 interface HeaderProps {
   user: User | null;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<{ error: string | null }>;
 }
 
 function Header({ user, signOut }: HeaderProps) {
