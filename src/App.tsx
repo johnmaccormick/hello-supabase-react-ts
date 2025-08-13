@@ -1,34 +1,15 @@
 import { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+// import toast from "react-hot-toast";
 import supabaseClient from "./utils/supabase";
-import LoginForm from "./login-form-component";
 import type { User } from "@supabase/supabase-js";
+import Header from "./components/Header";
+import LoginPage from "./components/LoginPage";
+import ForgotPasswordPage from "./components/ForgotPasswordPage";
 
-function Page() {
+// Your main todos page component
+function TodosPage({ user }: { user: User | null }) {
   const [todos, setTodos] = useState<any[]>([]);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Check for existing session and listen for auth changes
-  useEffect(() => {
-    // Get initial session
-    supabaseClient.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-      console.log("Initial session:", session);
-    });
-
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-      console.log("Auth state changed:", session);
-      console.log(" ...session.user.email:", session?.user?.email ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   useEffect(() => {
     async function getTodos() {
@@ -47,6 +28,47 @@ function Page() {
     }
 
     getTodos();
+  }, [user]);
+
+  return (
+    <div style={{ padding: "2rem" }}>
+      <h2>Your Todos</h2>
+      {todos.length === 0 ? (
+        <p>No todos found. Add some todos to your database!</p>
+      ) : (
+        <ul>
+          {todos.map((todo) => (
+            <li key={todo.id} style={{ marginBottom: "0.5rem" }}>
+              {todo.task}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Check for existing session and listen for auth changes
+  useEffect(() => {
+    // Get initial session
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // Sign in with email/password
@@ -57,8 +79,12 @@ function Page() {
     });
     if (error) {
       console.error("Error signing in:", error.message);
+      return { error: error.message };
     } else {
-      console.log("Sign in successful");
+      console.log(
+        "Sign in successful."
+      );
+      return { error: null };
     }
   };
 
@@ -70,8 +96,14 @@ function Page() {
     });
     if (error) {
       console.error("Error signing up:", error.message);
+      return { error: error.message };
+      // toast.error(error.message);
     } else {
-      console.log("Sign up successful");
+      console.log(
+        "Sign up successful! Please check your email for verification."
+      );
+      // toast.success("Check your email for verification.");
+      return { error: null };
     }
   };
 
@@ -80,48 +112,50 @@ function Page() {
     const { error } = await supabaseClient.auth.signOut();
     if (error) {
       console.error("Error signing out:", error.message);
-    } else {
-      console.log("Sign out successful");
     }
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div style={{ padding: "2rem" }}>Loading...</div>;
   }
 
-  function SignInOrOut() {
-    if (!user) {
-      return (
-        <LoginForm signIn={signIn} signUp={signUp} />
-      );
+  // Reset password
+  const resetPassword = async (email: string) => {
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
+    if (error) {
+      console.error("Error sending reset email:", error.message);
     } else {
-      return (
-        <div>
-          Logged in as {user.email}.
-          <button onClick={signOut}>Sign Out</button>
-        </div>
-      );
+      console.log("Password reset email sent!");
+      // You might want to show a success message to the user
     }
-  }
-
-  function TodosList() {
-    return (
-      <>
-        <p>Todos:</p>
-        <div>
-          {todos.map((todo) => (
-            <li key={todo.id}>{todo.task}</li>
-          ))}
-        </div>
-      </>
-    );
-  }
+  };
 
   return (
-    <>
-      <SignInOrOut />
-      <TodosList />
-    </>
+    <Router>
+      <div>
+        <Header user={user} signOut={signOut} />
+        <main>
+          <Routes>
+            <Route path="/" element={<TodosPage user={user} />} />
+            <Route
+              path="/hello-supabase-react-ts"
+              element={<TodosPage user={user} />}
+            />
+            <Route
+              path="/login"
+              element={
+                <LoginPage signIn={signIn} signUp={signUp} user={user} />
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={<ForgotPasswordPage resetPassword={resetPassword} />}
+            />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   );
 }
-export default Page;
+
+export default App;
