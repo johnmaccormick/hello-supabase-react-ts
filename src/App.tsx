@@ -119,10 +119,10 @@ function App() {
 
   // Reset password
   const resetPassword = async (email: string) => {
-    const redirectTo = window.location.origin + "/update-password";
+    const redirectTo = window.location.origin + "/hello-supabase-react-ts/update-password";
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-            redirectTo: redirectTo,
-          });
+      redirectTo: redirectTo,
+    });
     if (error) {
       console.error("Error resetting password:", error.message);
       return { error: error.message };
@@ -151,8 +151,7 @@ function App() {
   }
 
   return (
-    // <Router basename="/hello-supabase-react-ts">
-    <Router >
+    <Router basename="/hello-supabase-react-ts">
       <div>
         <Header user={user} signOut={signOut} />
         <main>
@@ -171,7 +170,7 @@ function App() {
             <Route
               path="/forgot-password"
               element={<ForgotPasswordPage resetPassword={resetPassword} />}
-            />            
+            />
             <Route
               path="/update-password"
               element={<UpdatePasswordPage updatePassword={updatePassword} />}
