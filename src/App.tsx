@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+// import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 // import toast from "react-hot-toast";
 import supabaseClient from "./utils/supabase";
 import type { User } from "@supabase/supabase-js";
@@ -119,7 +120,7 @@ function App() {
 
   // Reset password
   const resetPassword = async (email: string) => {
-    const redirectTo = window.location.origin + "/hello-supabase-react-ts/update-password";
+    const redirectTo = window.location.origin + "/hello-supabase-react-ts/#/update-password";
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
       redirectTo: redirectTo,
     });
@@ -151,7 +152,8 @@ function App() {
   }
 
   return (
-    <Router basename="/hello-supabase-react-ts">
+    // <Router basename="/hello-supabase-react-ts">
+    <Router>
       <div>
         <Header user={user} signOut={signOut} />
         <main>

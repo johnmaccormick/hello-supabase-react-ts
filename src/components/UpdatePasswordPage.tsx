@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import supabaseClient from "../utils/supabase";
 
 interface UpdatePasswordPageProps {
@@ -11,7 +11,8 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-//   const navigate = useNavigate();
+  const [sessionReady, setSessionReady] = useState(false);
+  //   const navigate = useNavigate();
 
   // Handle the auth callback when user arrives from email.
   // Not necessary, but good to have this console message for debugging.
@@ -20,8 +21,137 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
       if (event === "PASSWORD_RECOVERY") {
         // User is now in password recovery mode
         console.log("Ready to update password");
+      } else {
+        console.log(
+          "Auth state changed, but the event was not PASSWORD_RECOVERY"
+        );
+        console.log("Event:", event);
+        console.log("Session:", session);
       }
     });
+  }, []);
+
+  // Handle the auth session from the email link
+  useEffect(() => {
+    const handleAuthSession = async () => {
+      // Debug: log the full URL and hash
+      console.log("Full URL:", window.location.href);
+      console.log("Hash:", window.location.hash);
+
+      const hash = window.location.hash;
+      const routeAndParams = hash.substring(1); // Remove the initial '#'
+      const paramsStartIndex = routeAndParams.indexOf("#");
+      //   const paramsStartIndex = hash.indexOf("?");
+
+      console.log("Route and params:", routeAndParams);
+      console.log("Params start index:", paramsStartIndex);
+
+      if (paramsStartIndex !== -1) {
+        // Isolate the string containing only the parameters, starting after the second '#'
+        const hashQuery = hash.substring(paramsStartIndex + 2);
+        const hashParams = new URLSearchParams(hashQuery);
+        const accessToken = hashParams.get("access_token");
+
+        // Try multiple ways to extract tokens
+        //   const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const urlParams = new URLSearchParams(window.location.search);
+
+        console.log("Hash params:", Object.fromEntries(hashParams));
+        console.log("URL params:", Object.fromEntries(urlParams));
+        console.log("hashQuery:", hashQuery);
+        console.log("Access token:", accessToken);
+
+        // const accessToken =
+        //   hashParams.get("/update-password#access_token") ||
+        //   urlParams.get("access_token");
+        const refreshToken =
+          hashParams.get("refresh_token") || urlParams.get("refresh_token");
+        const tokenType =
+          hashParams.get("token_type") || urlParams.get("token_type");
+        const type = hashParams.get("type") || urlParams.get("type");
+
+        console.log("Extracted tokens:", {
+          accessToken,
+          refreshToken,
+          tokenType,
+          type,
+        });
+
+        // Check current session first
+        const { data: currentSession } = await supabaseClient.auth.getSession();
+        console.log("Current session:", currentSession);
+
+        // Check if there's a session from the URL hash
+        //   const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        //   const accessToken = hashParams.get("access_token");
+        //   const refreshToken = hashParams.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          console.log("Setting session with tokens...");
+          // Set the session from the URL parameters
+          const { data, error } = await supabaseClient.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          console.log("SetSession result:", { data, error });
+
+          if (error) {
+            console.error("Error setting session:", error.message);
+            setError("Invalid or expired reset link: " + error.message);
+          } else {
+            setSessionReady(true);
+            console.log("Session set successfully:", data);
+            console.log("data:", data);
+            console.log("error:", error);
+          }
+        } else if (type === "recovery") {
+          // Sometimes the flow works differently for password recovery
+          console.log(
+            "Recovery type detected, waiting for auth state change..."
+          );
+          setTimeout(() => {
+            supabaseClient.auth
+              .getSession()
+              .then(({ data: session, error }) => {
+                console.log("Session after recovery:", { session, error });
+                if (session?.session) {
+                  setSessionReady(true);
+                } else {
+                  setError("No session found after recovery");
+                }
+              });
+          }, 1000);
+        } else {
+          setError(
+            "No valid reset token found. Please request a new password reset."
+          );
+          console.log("No valid reset token found in URL.");
+          console.log("hashParams:", hashParams);
+          console.log("accessToken:", accessToken);
+          console.log("refreshToken:", refreshToken);
+        }
+      } else {
+        setError(
+          "No reset token found in URL. Please request a new password reset."
+        );
+        console.log("No parameters found in URL hash.");
+      }
+    };
+
+    // Also listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabaseClient.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state change:", { event, session });
+      if (event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
+        setSessionReady(true);
+      }
+    });
+
+    handleAuthSession();
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // Reset error & success state when email changes
@@ -73,7 +203,6 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
           <h2 style={{ textAlign: "center", marginBottom: "2rem" }}>
             Update password
           </h2>
-          <p>Enter new password.</p>
           <form
             onSubmit={handleSubmit}
             style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
@@ -83,7 +212,7 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
                 htmlFor="newPassword"
                 style={{ display: "block", marginBottom: "0.5rem" }}
               >
-                New password:
+                Enter new password:
               </label>
               <input
                 id="newPassword"
@@ -135,18 +264,28 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
           )}
 
           {success && (
-            <div
-              style={{
-                padding: "0.75rem",
-                backgroundColor: "#f8d7da",
-                color: "#139d2eff",
-                border: "1px solid #f5c6cb",
-                borderRadius: "4px",
-                marginBottom: "1rem",
-              }}
-            >
-              {success}
-            </div>
+            <>
+              <div
+                style={{
+                  padding: "0.75rem",
+                  backgroundColor: "#f8d7da",
+                  color: "#139d2eff",
+                  border: "1px solid #f5c6cb",
+                  borderRadius: "4px",
+                  marginBottom: "1rem",
+                }}
+              >
+                {success}
+              </div>
+              <p style={{ textAlign: "center" }}>
+                <a
+                  href="/hello-supabase-react-ts/#/"
+                  style={{ color: "#007bff", textDecoration: "none" }}
+                >
+                  Go to home page
+                </a>
+              </p>
+            </>
           )}
         </div>
       </div>
