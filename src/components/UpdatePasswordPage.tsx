@@ -294,3 +294,4 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
 }
 
 export default UpdatePasswordPage;
+
