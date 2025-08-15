@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 // import { useNavigate } from "react-router-dom";
 import supabaseClient from "../utils/supabase";
 import ErrorBox from "./ErrorBox";
@@ -15,23 +16,6 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
   //   const navigate = useNavigate();
-
-  // Handle the auth callback when user arrives from email.
-  // Not necessary, but good to have this console message for debugging.
-  useEffect(() => {
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY") {
-        // User is now in password recovery mode
-        console.log("Ready to update password");
-      } else {
-        console.log(
-          "Auth state changed, but the event was not PASSWORD_RECOVERY"
-        );
-        console.log("Event:", event);
-        console.log("Session:", session);
-      }
-    });
-  }, []);
 
   // Handle the auth session from the email link
   useEffect(() => {
@@ -51,7 +35,6 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
         const type = hashParams.get("type");
 
         await prepareSession(accessToken, refreshToken, type, hashParams);
-        
       } else {
         setError(
           "No reset token found in URL. Please request a new password reset."
@@ -148,39 +131,13 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
 
   return (
     <>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "calc(100vh - 80px)", // Account for header
-          padding: "2rem",
-        }}
-      >
-        <div
-          style={{
-            width: "100%",
-            maxWidth: "400px",
-            padding: "2rem",
-            border: "1px solid #e0e0e0",
-            borderRadius: "8px",
-            backgroundColor: "white",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-          }}
-        >
-          <h2 style={{ textAlign: "center", marginBottom: "2rem" }}>
-            Update password
-          </h2>
-          <form
-            onSubmit={handleSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-          >
+      <div className="page-center">
+        <div className="form-card">
+          <h2 className="page-title">Update password</h2>
+          <form onSubmit={handleSubmit} className="form-container">
             <div>
-              <label
-                htmlFor="newPassword"
-                style={{ display: "block", marginBottom: "0.5rem" }}
-              >
-                Enter new password:
+              <label htmlFor="newPassword" className="form-label">
+                Enter new password (minimum 6 characters):
               </label>
               <input
                 id="newPassword"
@@ -189,31 +146,16 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #ccc",
-                  borderRadius: "4px",
-                  fontSize: "1rem",
-                }}
+                className="form-input"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading || !(newPassword.length >= 6)}
-              style={{
-                padding: "0.75rem",
-                backgroundColor: loading ? "#ccc" : "#007bff",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                fontSize: "1rem",
-                cursor: loading ? "not-allowed" : "pointer",
-                marginTop: "1rem",
-              }}
+              className="btn-primary"
             >
-              {loading ? "Loading..." : "Update password"}
+              {loading ? "Loading..." : "Update Password"}
             </button>
           </form>
           {error && <ErrorBox message={error} />}
@@ -221,13 +163,10 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
           {success && (
             <>
               <SuccessBox message={success} />
-              <p style={{ textAlign: "center" }}>
-                <a
-                  href="/hello-supabase-react-ts/#/"
-                  style={{ color: "#007bff", textDecoration: "none" }}
-                >
+              <p className="centered-link">
+                <Link to="/" className="primary-link">
                   Go to home page
-                </a>
+                </Link>
               </p>
             </>
           )}
