@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 // import { useNavigate } from "react-router-dom";
 import supabaseClient from "../utils/supabase";
+import ErrorBox from "./ErrorBox";
+import SuccessBox from "./SuccessBox";
 
 interface UpdatePasswordPageProps {
   updatePassword: (email: string) => Promise<{ error: string | null }>;
@@ -34,17 +36,9 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
   // Handle the auth session from the email link
   useEffect(() => {
     const handleAuthSession = async () => {
-      // Debug: log the full URL and hash
-      console.log("Full URL:", window.location.href);
-      console.log("Hash:", window.location.hash);
-
       const hash = window.location.hash;
       const routeAndParams = hash.substring(1); // Remove the initial '#'
       const paramsStartIndex = routeAndParams.indexOf("#");
-      //   const paramsStartIndex = hash.indexOf("?");
-
-      console.log("Route and params:", routeAndParams);
-      console.log("Params start index:", paramsStartIndex);
 
       if (paramsStartIndex !== -1) {
         // Isolate the string containing only the parameters, starting after the second '#'
@@ -52,58 +46,37 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
         const hashParams = new URLSearchParams(hashQuery);
         const accessToken = hashParams.get("access_token");
 
-        // Try multiple ways to extract tokens
-        //   const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const urlParams = new URLSearchParams(window.location.search);
+        const refreshToken = hashParams.get("refresh_token");
+        const tokenType = hashParams.get("token_type");
+        const type = hashParams.get("type");
 
-        console.log("Hash params:", Object.fromEntries(hashParams));
-        console.log("URL params:", Object.fromEntries(urlParams));
-        console.log("hashQuery:", hashQuery);
-        console.log("Access token:", accessToken);
+        await prepareSession(accessToken, refreshToken, type, hashParams);
+        
+      } else {
+        setError(
+          "No reset token found in URL. Please request a new password reset."
+        );
+        console.log("No parameters found in URL hash.");
+      }
 
-        // const accessToken =
-        //   hashParams.get("/update-password#access_token") ||
-        //   urlParams.get("access_token");
-        const refreshToken =
-          hashParams.get("refresh_token") || urlParams.get("refresh_token");
-        const tokenType =
-          hashParams.get("token_type") || urlParams.get("token_type");
-        const type = hashParams.get("type") || urlParams.get("type");
-
-        console.log("Extracted tokens:", {
-          accessToken,
-          refreshToken,
-          tokenType,
-          type,
-        });
-
-        // Check current session first
-        const { data: currentSession } = await supabaseClient.auth.getSession();
-        console.log("Current session:", currentSession);
-
-        // Check if there's a session from the URL hash
-        //   const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        //   const accessToken = hashParams.get("access_token");
-        //   const refreshToken = hashParams.get("refresh_token");
-
+      async function prepareSession(
+        accessToken: string | null,
+        refreshToken: string | null,
+        type: string | null,
+        hashParams: URLSearchParams
+      ) {
         if (accessToken && refreshToken) {
-          console.log("Setting session with tokens...");
           // Set the session from the URL parameters
           const { data, error } = await supabaseClient.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
 
-          console.log("SetSession result:", { data, error });
-
           if (error) {
             console.error("Error setting session:", error.message);
             setError("Invalid or expired reset link: " + error.message);
           } else {
             setSessionReady(true);
-            console.log("Session set successfully:", data);
-            console.log("data:", data);
-            console.log("error:", error);
           }
         } else if (type === "recovery") {
           // Sometimes the flow works differently for password recovery
@@ -131,11 +104,6 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
           console.log("accessToken:", accessToken);
           console.log("refreshToken:", refreshToken);
         }
-      } else {
-        setError(
-          "No reset token found in URL. Please request a new password reset."
-        );
-        console.log("No parameters found in URL hash.");
       }
     };
 
@@ -248,35 +216,11 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
               {loading ? "Loading..." : "Update password"}
             </button>
           </form>
-          {error && (
-            <div
-              style={{
-                padding: "0.75rem",
-                backgroundColor: "#f8d7da",
-                color: "#721c24",
-                border: "1px solid #f5c6cb",
-                borderRadius: "4px",
-                marginBottom: "1rem",
-              }}
-            >
-              {error}
-            </div>
-          )}
+          {error && <ErrorBox message={error} />}
 
           {success && (
             <>
-              <div
-                style={{
-                  padding: "0.75rem",
-                  backgroundColor: "#f8d7da",
-                  color: "#139d2eff",
-                  border: "1px solid #f5c6cb",
-                  borderRadius: "4px",
-                  marginBottom: "1rem",
-                }}
-              >
-                {success}
-              </div>
+              <SuccessBox message={success} />
               <p style={{ textAlign: "center" }}>
                 <a
                   href="/hello-supabase-react-ts/#/"
@@ -294,4 +238,3 @@ function UpdatePasswordPage({ updatePassword }: UpdatePasswordPageProps) {
 }
 
 export default UpdatePasswordPage;
-
