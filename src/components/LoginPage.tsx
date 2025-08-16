@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { User } from "@supabase/supabase-js";
 import { Link } from "react-router-dom";
+import ErrorBox from "./ErrorBox";
+import SuccessBox from "./SuccessBox";
 
 interface LoginPageProps {
   signIn: (
@@ -78,41 +80,14 @@ function LoginPage({ signIn, signUp, user }: LoginPageProps) {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "calc(100vh - 80px)", // Account for header
-        padding: "2rem",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "400px",
-          padding: "2rem",
-          border: "1px solid #e0e0e0",
-          borderRadius: "8px",
-          backgroundColor: "white",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-        }}
-      >
-        <h2 style={{ textAlign: "center", marginBottom: "2rem" }}>
+    <div className="page-center">
+      <div className="form-card">
+        <h2 className="page-title">
           {isSignUp ? "Create Account" : "Sign In"}
         </h2>
-
-
-
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-        >
+        <form onSubmit={handleSubmit} className="form-container">
           <div>
-            <label
-              htmlFor="email"
-              style={{ display: "block", marginBottom: "0.5rem" }}
-            >
+            <label htmlFor="email" className="form-label">
               Email:
             </label>
             <input
@@ -122,21 +97,12 @@ function LoginPage({ signIn, signUp, user }: LoginPageProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-                fontSize: "1rem",
-              }}
+              className="form-input"
             />
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              style={{ display: "block", marginBottom: "0.5rem" }}
-            >
+            <label htmlFor="password" className="form-label">
               Password:
             </label>
             <input
@@ -146,87 +112,33 @@ function LoginPage({ signIn, signUp, user }: LoginPageProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-                fontSize: "1rem",
-              }}
+              className="form-input"
             />
           </div>
 
-          <div style={{ textAlign: "center", marginTop: "1rem" }}>
-            <Link
-              to="/forgot-password"
-              style={{
-                color: "#007bff",
-                textDecoration: "none",
-                fontSize: "0.9rem",
-              }}
-            >
+          <p className="centered-link">
+            <Link to="/forgot-password" className="primary-link">
               Forgot your password?
             </Link>
-          </div>
+          </p>
 
           <button
             type="submit"
             disabled={loading || !email || !password}
-            style={{
-              padding: "0.75rem",
-              backgroundColor: loading ? "#ccc" : "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              fontSize: "1rem",
-              cursor: loading ? "not-allowed" : "pointer",
-              marginTop: "1rem",
-            }}
+            className="btn-primary"
           >
             {loading ? "Loading..." : isSignUp ? "Create Account" : "Sign In"}
           </button>
         </form>
 
-        {error && (
-          <div
-            style={{
-              padding: "0.75rem",
-              backgroundColor: "#f8d7da",
-              color: "#721c24",
-              border: "1px solid #f5c6cb",
-              borderRadius: "4px",
-              marginBottom: "1rem",
-            }}
-          >
-            {error}
-          </div>
-        )}
+        {error && <ErrorBox message={error} />}
 
-        {success && (
-          <div
-            style={{
-              padding: "0.75rem",
-              backgroundColor: "#f8d7da",
-              color: "#139d2eff",
-              border: "1px solid #f5c6cb",
-              borderRadius: "4px",
-              marginBottom: "1rem",
-            }}
-          >
-            {success}
-          </div>
-        )}
+        {success && <SuccessBox message={success} />}
 
-        <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
+        <div className="form-footer">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#007bff",
-              textDecoration: "underline",
-              cursor: "pointer",
-            }}
+            className="btn-primary"
           >
             {isSignUp
               ? "Already have an account? Sign in"

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import ErrorBox from "./ErrorBox";
+import SuccessBox from "./SuccessBox";
 
 interface ForgotPasswordPageProps {
   resetPassword: (email: string) => Promise<{ error: string | null }>;
@@ -26,11 +28,11 @@ function ForgotPasswordPage({ resetPassword }: ForgotPasswordPageProps) {
     try {
       const result = await resetPassword(email);
       if (result?.error) {
-          setError(result.error);
-          console.error("Error resetting password:", result.error);
-        } else {
-          setSuccess("Check your email for reset link.");
-        }
+        setError(result.error);
+        console.error("Error resetting password:", result.error);
+      } else {
+        setSuccess("Check your email for reset link.");
+      }
     } finally {
       setLoading(false);
     }
@@ -38,39 +40,13 @@ function ForgotPasswordPage({ resetPassword }: ForgotPasswordPageProps) {
 
   return (
     <>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "calc(100vh - 80px)", // Account for header
-          padding: "2rem",
-        }}
-      >
-        <div
-          style={{
-            width: "100%",
-            maxWidth: "400px",
-            padding: "2rem",
-            border: "1px solid #e0e0e0",
-            borderRadius: "8px",
-            backgroundColor: "white",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-          }}
-        >
-          <h2 style={{ textAlign: "center", marginBottom: "2rem" }}>
-            Reset password
-          </h2>
+      <div className="page-center">
+        <div className="form-card">
+          <h2 className="page-title">Reset password</h2>
           <p>Enter email to request password reset.</p>
-          <form
-            onSubmit={handleSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-          >
+          <form onSubmit={handleSubmit} className="form-container">
             <div>
-              <label
-                htmlFor="email"
-                style={{ display: "block", marginBottom: "0.5rem" }}
-              >
+              <label htmlFor="email" className="form-label">
                 Email:
               </label>
               <input
@@ -80,62 +56,21 @@ function ForgotPasswordPage({ resetPassword }: ForgotPasswordPageProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #ccc",
-                  borderRadius: "4px",
-                  fontSize: "1rem",
-                }}
+                className="form-input"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading || !email}
-              style={{
-                padding: "0.75rem",
-                backgroundColor: loading ? "#ccc" : "#007bff",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                fontSize: "1rem",
-                cursor: loading ? "not-allowed" : "pointer",
-                marginTop: "1rem",
-              }}
+              className="btn-primary"
             >
               {loading ? "Loading..." : "Request reset"}
             </button>
           </form>
-          {error && (
-          <div
-            style={{
-              padding: "0.75rem",
-              backgroundColor: "#f8d7da",
-              color: "#721c24",
-              border: "1px solid #f5c6cb",
-              borderRadius: "4px",
-              marginBottom: "1rem",
-            }}
-          >
-            {error}
-          </div>
-        )}
+          {error && <ErrorBox message={error} />}
 
-        {success && (
-          <div
-            style={{
-              padding: "0.75rem",
-              backgroundColor: "#f8d7da",
-              color: "#139d2eff",
-              border: "1px solid #f5c6cb",
-              borderRadius: "4px",
-              marginBottom: "1rem",
-            }}
-          >
-            {success}
-          </div>
-        )}
+          {success && <SuccessBox message={success} />}
         </div>
       </div>
     </>
